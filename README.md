@@ -12,6 +12,10 @@ Effects the audio passes through:
 Tonal Delay · Stutter · Crush · Filter · Phaser · Chorus · Delay · Reverb
 (Delay, Reverb and Tonal Delay are send-style and keep ringing after their block ends.)
 
+**Wild bank** (not in Effectrix):
+- Buffer effects: Bounce (retriggers that speed up like a dropped ball) · Shuffle (swaps in random slices of the loop) · Skip (CD skipping / datamosh)
+- Processing: Ring Mod · Shifter (granular pitch, ±24 st) · Cloud (granular spray) · Vowel (talking formant filter) · Fold (wavefolder) · Strings (sympathetic Karplus-Strong chord) · Radio (AM / shortwave / phone) · Shimmer (pitch-shifted feedback reverb, with Freeze)
+
 Each effect has two parameters, a mix, a mode where relevant, and two per-step modulation lanes with depth.
 You also get 8 pattern slots, Chaos, Copy/Paste, swing, a built-in synthesized break, or load your own loop.
 

@@ -13,8 +13,20 @@ const ROWS = [
   { n: 'Chorus', h: 272, a: 'Rate', b: 'Depth' },
   { n: 'Delay', h: 300, a: 'Time', b: 'Feedback', modes: ['Ping-pong', 'Stereo'] },
   { n: 'Reverb', h: 328, a: 'Size', b: 'Damp' },
+  { n: 'Bounce', h: 340, a: 'Drop', b: 'Bounciness', modes: ['Fall', 'Rise'], w: 1 },
+  { n: 'Shuffle', h: 0, a: 'Slice', b: 'Chance', modes: ['Anywhere', 'Nearby', '+Reverse'], w: 1 },
+  { n: 'Skip', h: 18, a: 'Chunk', b: 'Glitchiness', modes: ['CD', 'Datamosh'], w: 1 },
+  { n: 'Ring Mod', h: 38, a: 'Freq', b: 'Spread', modes: ['Sine', 'Square', 'Sweep'], w: 1 },
+  { n: 'Shifter', h: 58, a: 'Pitch', b: 'Window', modes: ['Shift', 'Harmonize'], w: 1 },
+  { n: 'Cloud', h: 84, a: 'Density', b: 'Spread', modes: ['Octaves', 'Wild', 'Reverse'], w: 1, long: 1 },
+  { n: 'Vowel', h: 128, a: 'Vowel', b: 'Q', modes: ['Static', 'Talk'], w: 1, long: 1 },
+  { n: 'Fold', h: 164, a: 'Drive', b: 'Bias', modes: ['Sine', 'Triangle', 'Rectify'], w: 1 },
+  { n: 'Strings', h: 190, a: 'Root', b: 'Sustain', modes: ['m7', 'Maj7', '5ths', 'Sus', 'Tritone'], w: 1, long: 1 },
+  { n: 'Radio', h: 228, a: 'Tuning', b: 'Drift', modes: ['AM', 'Shortwave', 'Phone'], w: 1, long: 1 },
+  { n: 'Shimmer', h: 282, a: 'Decay', b: 'Shimmer', modes: ['+Oct', '+5th', '−Oct', 'Freeze'], w: 1 },
 ];
-const NRW = 14, MS = 32;
+[9, 10, 11, 13].forEach(r => ROWS[r].long = 1);
+const NRW = 25, MS = 32;
 const NOTE = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 const pk = (arr, v) => arr[Math.min(arr.length - 1, Math.floor(v * arr.length))];
 const SZL = ['1/128', '1/64', '1/32', '1/16', '1/8', '1/4'];
@@ -36,6 +48,17 @@ function fmt(r, w, v) {
       return r === 10 ? Math.round(v * 85) + '%' : (0.5 + v * 7.5).toFixed(1) + ' ms';
     case 12: return w === 'a' ? pk(['1/32', '1/16', '1/8', '3/16', '1/4', '3/8'], v) : Math.round(v * 88) + '%';
     case 13: return pct;
+    case 14: return w === 'a' ? pk(['1/32', '1/16', '1/8', '1/4'], v) : Math.round((0.45 + 0.5 * v) * 100) + '%';
+    case 15: return w === 'a' ? pk(['1/32', '1/16', '1/8', '1/4'], v) : pct;
+    case 16: return w === 'a' ? Math.round(5 + 145 * v * v) + ' ms' : pct;
+    case 17: if (w === 'a') { const f = 10 * Math.pow(2, v * 8.6); return f >= 1000 ? (f / 1000).toFixed(2) + ' kHz' : Math.round(f) + ' Hz'; } return (v * 3).toFixed(1) + '%';
+    case 18: if (w === 'a') { const st = Math.round((v - .5) * 48); return (st > 0 ? '+' : '') + st + ' st'; } return Math.round(20 + 100 * v) + ' ms';
+    case 19: return w === 'a' ? Math.round(4 + 56 * v) + '/s' : (0.02 + 1.5 * v).toFixed(2) + ' s';
+    case 20: if (w === 'a') { const x = v * 4, i = Math.min(3, Math.floor(x)), f = x - i; const V = 'AEIOU'; return f < .2 ? V[i] : f > .8 ? V[i + 1] : V[i] + '→' + V[i + 1]; } return Math.round(4 + 20 * v);
+    case 21: if (w === 'a') return (1 + v * 14).toFixed(1) + '×'; { const b = Math.round((v - .5) * 100); return (b > 0 ? '+' : '') + b; }
+    case 22: if (w === 'a') { const m = 36 + Math.round(v * 36); return NOTE[m % 12] + (Math.floor(m / 12) - 1); } return pct;
+    case 23: return pct;
+    case 24: return pct;
   }
 }
 
@@ -53,15 +76,32 @@ function defaults() {
   for (let s = 0; s < 16; s++) pats[2].la[9][s] = s / 15;
   [0, 0, 3, 3, 7, 7, 10, 12].forEach((m, k) => pats[2].la[6][8 + k] = m / 48);
   blk(3, 10, 0, 15); blk(3, 0, 6, 7); blk(3, 1, 12, 12); blk(3, 11, 8, 11); blk(3, 12, 15, 15);
+  blk(4, 17, 4, 5); blk(4, 21, 8, 9); blk(4, 24, 0, 0); blk(4, 24, 8, 8); blk(4, 14, 12, 15);
+  blk(5, 22, 0, 3); blk(5, 22, 8, 11); blk(5, 18, 4, 7); blk(5, 18, 12, 15); blk(5, 13, 15, 15);
+  [.25, .25, .146, .146].forEach((v, k) => pats[5].la[18][4 + k] = v); [.0625, .0625, .104, .104].forEach((v, k) => pats[5].la[18][12 + k] = v);
+  blk(6, 23, 0, 7); blk(6, 19, 4, 11); blk(6, 20, 8, 15);
+  blk(7, 15, 0, 15); blk(7, 16, 6, 7); blk(7, 12, 11, 11); blk(7, 13, 15, 15);
   for (const p of pats) for (let r = 0; r < NRW; r++) for (let s = 0; s < 16; s++) {
     p.grid[r][s + 16] = p.grid[r][s] ? p.grid[r][s] + 500 : 0; p.la[r][s + 16] = p.la[r][s]; p.lb[r][s + 16] = p.lb[r][s]; }
   const par = [{ a: .5, mode: 2 }, { a: .4, b: 1 }, { a: .3, b: .6 }, {}, { a: .3, b: .4 }, { a: .8, b: .4 },
     { a: 21 / 48, b: .7, mix: .8, ma: 1 }, {}, { a: .7, b: .4 }, { a: .35, ma: .6 }, { a: .4, b: .6 }, { a: .3 },
-    { b: .45, mix: .8 }, { a: .7, b: .4, mix: .9 }].map(p => Object.assign({ a: .5, b: .5, mix: 1, ma: 0, mb: 0, mode: 0 }, p));
+    { b: .45, mix: .8 }, { a: .7, b: .4, mix: .9 },
+    { a: .6, b: .5 }, { a: .3, b: .6 }, { a: .35, b: .6, mode: 1 }, { a: .55, b: .3 }, { a: .5, b: .4, ma: 1 },
+    { a: .6, b: .4 }, { a: .2, b: .5, mode: 1 }, { a: .45, b: .5 }, { a: .25, b: .5, mix: .8 }, { a: .35, b: .5, mode: 1 }, { a: .7, b: .5, mix: .8 }].map(p => Object.assign({ a: .5, b: .5, mix: 1, ma: 0, mb: 0, mode: 0 }, p));
   return { pats, cur: 0, par, nSteps: 16, swing: 0, mix: 1, vol: .8, sel: 9, lane: 'a', page: 0, bars: 2, bpm: 100, nextId: 2000 };
 }
 try { S = JSON.parse(localStorage.getItem('gridlock-v1')); } catch (e) { S = null; }
 if (!S || !S.pats || S.pats.length !== 8) S = defaults();
+else if (S.par.length < NRW) { // migrate saved state from the 14-effect version
+  const D = defaults();
+  for (let r = S.par.length; r < NRW; r++) S.par.push(D.par[r]);
+  S.pats.forEach((p, i) => {
+    const empty = !p.grid.some(row => row.some(v => v));
+    if (empty && i >= 4) { S.pats[i] = D.pats[i]; return; }
+    for (const k of ['grid', 'la', 'lb']) while (p[k].length < NRW) p[k].push(new Array(MS).fill(0));
+  });
+}
+S.hide = S.hide || {};
 let saveT = 0;
 const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem('gridlock-v1', JSON.stringify(S)); } catch (e) {} }, 400); };
 const P = () => S.pats[S.cur];
@@ -121,13 +161,22 @@ const $ = id => document.getElementById(id);
 const grid = $('grid'); const cellEls = []; const lightEls = []; const rowEls = [];
 function buildGrid() {
   ROWS.forEach((row, r) => {
-    const rw = document.createElement('div'); rw.className = 'row' + (r === 5 ? ' div' : ''); rw.style.setProperty('--h', row.h);
+    if (r === 0 || r === 14) { const key = r ? 'wild' : 'classic', sec = document.createElement('div'); sec.className = 'sec' + (r ? ' wild' : '');
+      sec.innerHTML = r ? '<span>Wild</span><em>new effects not in Effectrix</em>' : '<span>Classic</span><em>the Effectrix 14</em>';
+      sec.onclick = () => { S.hide[key] = !S.hide[key]; applyHide(); save(); }; grid.appendChild(sec); secEls[key] = sec; }
+    const rw = document.createElement('div'); rw.className = 'row' + (r === 5 || r === 16 ? ' div' : '') + (row.w ? ' wildrow' : '');
+    rw.dataset.bank = row.w ? 'wild' : 'classic'; rw.style.setProperty('--h', row.h);
     const lab = document.createElement('div'); lab.className = 'lab'; lab.innerHTML = `<span class="lt"></span>${row.n}`;
     lab.addEventListener('pointerdown', e => { e.stopPropagation(); S.sel = r; renderSel(); renderPanel(); save(); });
     const cells = document.createElement('div'); cells.className = 'cells'; cellEls[r] = [];
     for (let c = 0; c < 16; c++) { const ce = document.createElement('div'); ce.className = 'cell'; ce.dataset.r = r; ce.dataset.c = c; cells.appendChild(ce); cellEls[r].push(ce); }
     rw.append(lab, cells); grid.appendChild(rw); rowEls.push(rw); lightEls.push(lab.firstChild);
   });
+}
+const secEls = {};
+function applyHide() {
+  rowEls.forEach(el => el.style.display = S.hide[el.dataset.bank] ? 'none' : '');
+  for (const k in secEls) secEls[k].classList.toggle('closed', !!S.hide[k]);
 }
 function renderGrid() {
   const g = P().grid, off = S.page * 16;
@@ -195,7 +244,7 @@ function changed() { renderGrid(); renderPanel(); sendPat(); save(); paintPlayhe
 function chaos() {
   const p = blankPat(), n = S.nSteps;
   for (let r = 0; r < NRW; r++) {
-    const longish = r >= 9 && r !== 12, prob = r <= 5 ? 0.45 : 0.4;
+    const longish = !!ROWS[r].long, prob = r <= 5 ? 0.4 : r >= 14 ? 0.3 : 0.33;
     const blocks = n === 32 ? 2 : 1;
     for (let k = 0; k < blocks; k++) {
       if (Math.random() > prob) continue;
@@ -310,4 +359,4 @@ document.addEventListener('keydown', e => {
   const n = parseInt(e.key, 10); if (n >= 1 && n <= 8) selPat(n - 1);
 });
 
-buildGrid(); renderSel(); renderTransport(); renderGrid(); renderPanel();
+buildGrid(); applyHide(); renderSel(); renderTransport(); renderGrid(); renderPanel();
