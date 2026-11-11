@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Gridlock — step-sequenced effects</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#101013;--card:#18181d;--cell:#222229;--cell2:#2a2a33;--txt:#e9e7e2;--dim:#8a8892;--acc:#ffb547}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif}
+#app{max-width:760px;margin:0 auto;padding:12px 10px 40px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{font-weight:700;font-size:26px;letter-spacing:.06em}
+.logo span{color:var(--acc)}
+.sub{font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:-2px}
+button{font-family:inherit;font-size:13px;color:var(--txt);background:var(--cell2);border:0;border-radius:7px;padding:7px 10px;cursor:pointer}
+button.on{background:var(--acc);color:#1a1205;font-weight:700}
+button:active{filter:brightness(1.3)}
+.play{font-size:16px;font-weight:700;padding:10px 18px;background:var(--acc);color:#1a1205;border-radius:10px;min-width:96px}
+.play.stop{background:#ff5d5d;color:#fff}
+.card{background:var(--card);border-radius:12px;padding:10px;margin-bottom:10px}
+.line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:3px 0}
+.lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-right:2px}
+.mono{font-family:'JetBrains Mono',monospace}
+.seg{display:inline-flex;gap:3px}
+.seg button{padding:6px 9px}
+#srcname{font-size:12px;color:var(--dim);max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spacer{flex:1}
+.pats{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.pats .p{width:34px;padding:8px 0;font-family:'JetBrains Mono',monospace;font-weight:600}
+.pats .p.has::after{content:'';display:block;width:4px;height:4px;border-radius:2px;background:currentColor;margin:2px auto -6px;opacity:.6}
+#pager{display:none;gap:4px;margin-bottom:6px}
+#pager button{flex:1;position:relative}
+#pager button.live::after{content:'';position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:3px;background:#7dff9a}
+#grid{touch-action:none;user-select:none;-webkit-user-select:none;margin-bottom:10px}
+.row{display:flex;align-items:stretch;gap:4px;height:26px;margin-bottom:3px}
+.lab{width:84px;flex:none;display:flex;align-items:center;gap:6px;font-size:12.5px;padding:0 6px;border-radius:6px;background:var(--card);cursor:pointer;white-space:nowrap;overflow:hidden}
+.lab .lt{width:6px;height:6px;border-radius:3px;background:hsl(var(--h) 40% 30%);flex:none;transition:background .05s}
+.lab .lt.lit{background:hsl(var(--h) 95% 65%);box-shadow:0 0 8px hsl(var(--h) 95% 60%)}
+.row.sel .lab{background:hsl(var(--h) 45% 22%);color:hsl(var(--h) 95% 78%)}
+.row.div{margin-bottom:9px}
+.cells{flex:1;display:grid;grid-template-columns:repeat(16,1fr);gap:2px}
+.cell{position:relative;background:var(--cell);border-radius:4px}
+.cell.q{background:var(--cell2)}
+.cell.off{opacity:.25}
+.cell.on{background:hsl(var(--h) 78% 56%)}
+.cell.on.join{border-top-left-radius:0;border-bottom-left-radius:0}
+.cell.on.join::before{content:'';position:absolute;left:-3px;top:0;bottom:0;width:4px;background:inherit}
+.cell.on.cont{border-top-right-radius:0;border-bottom-right-radius:0}
+.cell.ph{box-shadow:inset 0 0 0 1px #ffffff55}
+.cell.on.ph{filter:brightness(1.35)}
+.panel h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}
+.panel h3 .dot{width:10px;height:10px;border-radius:5px;background:hsl(var(--h) 85% 60%)}
+.ctl{display:grid;grid-template-columns:78px 1fr 88px;align-items:center;gap:8px;margin:7px 0}
+.ctl span:first-child{font-size:12px;color:var(--dim)}
+.ctl .v{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--cell2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:9px;background:var(--hc,var(--acc));margin-top:-7px}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--cell2)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:9px;background:var(--hc,var(--acc))}
+.modtabs{display:flex;gap:4px;margin:10px 0 4px}
+.modtabs button{flex:1}
+.lane{touch-action:none;display:grid;grid-template-columns:repeat(16,1fr);gap:2px;height:84px;margin-top:6px;user-select:none;-webkit-user-select:none}
+.bar{background:var(--cell);border-radius:3px;position:relative;overflow:hidden}
+.bar .f{position:absolute;left:0;right:0;bottom:0;background:hsl(var(--h) 70% 50%);opacity:.85}
+.bar.ph{box-shadow:inset 0 0 0 1px #ffffff55}
+.hint{font-size:12px;color:var(--dim);line-height:1.5}
+.hint b{color:var(--txt);font-weight:500}
+#err{display:none;background:#3a1818;color:#ffb3b3;padding:8px 10px;border-radius:8px;font-size:12px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div><div class="logo">GRID<span>LOCK</span></div><div class="sub">step-sequenced multi-effect</div></div>
+    <button id="play" class="play">▶ Play</button>
+  </header>
+  <div id="err"></div>
+  <div class="card">
+    <div class="line">
+      <span class="lbl">Source</span>
+      <button id="bDemo" class="on">Demo beat</button>
+      <button id="bLoad">Load audio…</button>
+      <input id="file" type="file" accept="audio/*" hidden>
+      <span id="srcname"></span>
+    </div>
+    <div class="line">
+      <span id="tempoCtl" class="line" style="margin:0"><span class="lbl">BPM</span>
+        <button id="bpmDn">−</button><span id="bpmV" class="mono" style="min-width:34px;text-align:center">100</span><button id="bpmUp">+</button></span>
+      <span id="barsCtl" class="line" style="margin:0;display:none"><span class="lbl">Loop is</span>
+        <span class="seg" id="barsSeg"></span><span class="lbl">bars</span><span id="bpmCalc" class="mono" style="font-size:12px;color:var(--dim)"></span></span>
+      <span class="spacer"></span>
+      <span class="lbl">Steps</span><span class="seg"><button id="s16">16</button><button id="s32">32</button></span>
+    </div>
+  </div>
+  <div class="pats" id="pats"></div>
+  <div id="pager"><button id="pg0">Steps 1–16</button><button id="pg1">Steps 17–32</button></div>
+  <div id="grid"></div>
+  <div class="card panel" id="panel"></div>
+  <div class="card">
+    <div class="ctl"><span>Master mix</span><input id="mMix" type="range" min="0" max="1000"><span class="v" id="mMixV"></span></div>
+    <div class="ctl"><span>Swing</span><input id="mSw" type="range" min="0" max="1000"><span class="v" id="mSwV"></span></div>
+    <div class="ctl"><span>Volume</span><input id="mVol" type="range" min="0" max="1000"><span class="v" id="mVolV"></span></div>
+  </div>
+  <div class="hint">
+    <b>Drag</b> across a row to paint an effect block · <b>tap</b> a block to erase it · <b>tap a name</b> to tweak that effect and draw its two modulation lanes.
+    Of the six buffer effects (X-Loop → Vinyl), the lower row wins when they overlap. Delay, Reverb and Tonal Delay ring out after their block ends.
+    Keys: space = play, 1–8 = patterns.
+  </div>
+</div>
+<script id="eng">
+/*ENGINE*/
+</script>
+<script>
+/*DEMO*/
+</script>
+<script>
+/*MAIN*/
+</script>
+</body>
+</html>
